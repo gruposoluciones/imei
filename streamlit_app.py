@@ -57,9 +57,9 @@ def preparar_fechas(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def obtener_estadisticas_documento(df: pd.DataFrame) -> pd.DataFrame:
+def obtener_estadisticas_servicio(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Calcula cantidad de IMEI por número de documento.
+    Calcula cantidad de IMEI por número de servicio móvil.
     
     Parameters:
     -----------
@@ -69,10 +69,10 @@ def obtener_estadisticas_documento(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
     --------
     pd.DataFrame
-        Estadísticas de IMEI por documento
+        Estadísticas de IMEI por servicio móvil
     """
-    estadisticas = df.groupby('Número Documento Legal del Abonado')['IMEI'].count().reset_index()
-    estadisticas.columns = ['Número Documento', 'Cantidad de IMEI']
+    estadisticas = df.groupby('Número Servicio Móvil')['IMEI'].count().reset_index()
+    estadisticas.columns = ['Número de Servicio Móvil', 'Cantidad de IMEI']
     return estadisticas
 
 
@@ -95,38 +95,6 @@ def obtener_activaciones_por_fecha(df: pd.DataFrame) -> pd.DataFrame:
         df_activaciones['Fecha y Hora de Vinculación/Desvinculación'].dt.date
     ).size().reset_index(name='Cantidad de Activaciones')
     return activaciones
-
-
-def crear_grafico_temporal(activaciones: pd.DataFrame):
-    """
-    Crea gráfico de línea con serie temporal.
-    
-    Parameters:
-    -----------
-    activaciones : pd.DataFrame
-        DataFrame con activaciones por fecha
-        
-    Returns:
-    --------
-    matplotlib.figure.Figure
-        Figura del gráfico
-    """
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(
-        activaciones['Fecha y Hora de Vinculación/Desvinculación'],
-        activaciones['Cantidad de Activaciones'],
-        marker='o',
-        linewidth=2,
-        markersize=8,
-        color='#2E86AB'
-    )
-    ax.set_title('Patrón de Activaciones de IMEI por Fecha', fontsize=14, fontweight='bold')
-    ax.set_xlabel('Fecha', fontsize=12)
-    ax.set_ylabel('Cantidad de Activaciones', fontsize=12)
-    plt.xticks(rotation=45)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    return fig
 
 
 def crear_etiquetas_edges(df: pd.DataFrame) -> dict:
@@ -264,8 +232,8 @@ def crear_grafico_relacional(df: pd.DataFrame):
     
     # Conexiones y etiquetas
     nx.draw_networkx_edges(G, pos, width=2, alpha=0.6, edge_color='#888888', ax=ax)
-    nx.draw_networkx_labels(G, pos, labels, font_size=8, ax=ax)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels, font_size=6, ax=ax)
+    nx.draw_networkx_labels(G, pos, labels, font_size=14, font_weight='bold', ax=ax)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels, font_size=12, ax=ax)
     
     ax.set_title(
         'Relación entre Número de Servicio Móvil y IMEI Vinculados\n(con Fechas de Activación)',
@@ -295,8 +263,7 @@ def main():
         st.header("ℹ️ Información")
         st.markdown("""
         ### Características:
-        - 📈 Análisis estadístico de IMEI por documento
-        - 📅 Patrón temporal de activaciones
+        - � Análisis estadístico de IMEI por servicio móvil
         - 🕸️ Gráfico relacional servicio-IMEI
         
         ### Requisitos:
@@ -323,37 +290,16 @@ def main():
                 st.info(f"Total de registros: {len(df)} | Columnas: {len(df.columns)}")
             
             # Tabulación de resultados
-            tab1, tab2, tab3 = st.tabs(["📊 Estadísticas", "📈 Temporal", "🕸️ Grafo Relacional"])
+            tab1, tab2 = st.tabs(["📊 Estadísticas", "🕸️ Grafo Relacional"])
             
             # Tab 1: Estadísticas
             with tab1:
-                st.subheader("Cantidad de IMEI por Número de Documento")
-                estadisticas = obtener_estadisticas_documento(df)
+                st.subheader("Cantidad de IMEI por Número de Servicio Móvil")
+                estadisticas = obtener_estadisticas_servicio(df)
                 st.dataframe(estadisticas, width='stretch')
-                
-                # Métrica destacada
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Total de Documentos", estadisticas['Número Documento'].nunique())
-                with col2:
-                    st.metric("Total de IMEI", estadisticas['Cantidad de IMEI'].sum())
-                with col3:
-                    st.metric("Promedio por Doc.", f"{estadisticas['Cantidad de IMEI'].mean():.1f}")
             
-            # Tab 2: Análisis temporal
+            # Tab 2: Grafo relacional
             with tab2:
-                st.subheader("Patrón Temporal de Activaciones")
-                activaciones = obtener_activaciones_por_fecha(df)
-                
-                # Mostrar tabla
-                st.dataframe(activaciones, width='stretch')
-                
-                # Mostrar gráfico
-                fig = crear_grafico_temporal(activaciones)
-                st.pyplot(fig)
-            
-            # Tab 3: Grafo relacional
-            with tab3:
                 st.subheader("Grafo Relacional: Servicios e IMEI")
                 fig = crear_grafico_relacional(df)
                 st.pyplot(fig)
