@@ -4,6 +4,11 @@ Análisis de Reportes IMEI
 Script para analizar datos de activación/desactivación de IMEI en redes móviles.
 Genera reportes estadísticos y visualizaciones de los datos.
 
+Uso:
+    python3 AnalisisReporte.py                    # Usa lista1.xlsx por defecto
+    python3 AnalisisReporte.py archivo.xlsx       # Especifica archivo
+    python3 AnalisisReporte.py -h                 # Muestra ayuda
+
 Autor: Percy Beltrán
 Fecha: 2026-04-05
 """
@@ -17,6 +22,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import networkx as nx
 import os
+import sys
+import argparse
 
 # Configuración de matplotlib
 plt.style.use('seaborn-v0_8-darkgrid')
@@ -26,8 +33,41 @@ sns.set_palette("husl")
 # ============================================================================
 # CONFIGURACIÓN
 # ============================================================================
-RUTA_ARCHIVO = '/Users/percybeltran/Proyectos/IMEI/lista1.xlsx'
-DIRECTORIO_SALIDA = '/Users/percybeltran/Proyectos/IMEI'
+DIRECTORIO_SALIDA = os.path.dirname(os.path.abspath(__file__))
+ARCHIVO_DEFECTO = 'lista1.xlsx'
+
+
+def obtener_ruta_archivo(archivo_arg=None):
+    """
+    Obtiene la ruta del archivo a procesar.
+    
+    Parameters:
+    -----------
+    archivo_arg : str, optional
+        Ruta del archivo proporcionada como argumento
+        
+    Returns:
+    --------
+    str
+        Ruta absoluta del archivo
+    """
+    # Usar argumento si se proporciona, si no usar por defecto
+    nombre_archivo = archivo_arg or ARCHIVO_DEFECTO
+    
+    # Si es ruta relativa, convertir a absoluta en el directorio del script
+    if not os.path.isabs(nombre_archivo):
+        ruta_archivo = os.path.join(DIRECTORIO_SALIDA, nombre_archivo)
+    else:
+        ruta_archivo = nombre_archivo
+    
+    return ruta_archivo
+
+
+def listar_archivos_excel():
+    """
+    Lista los archivos Excel disponibles en el directorio."""
+    archivos_excel = [f for f in os.listdir(DIRECTORIO_SALIDA) if f.endswith('.xlsx')]
+    return archivos_excel
 
 
 # ============================================================================
@@ -53,7 +93,20 @@ def cargar_datos(ruta_archivo: str) -> pd.DataFrame:
         print(f"  Dimensiones: {df.shape[0]} filas, {df.shape[1]} columnas\n")
         return df
     except FileNotFoundError:
-        print(f"✗ Error: Archivo no encontrado en {ruta_archivo}")
+        print(f"✗ Error: Archivo no encontrado en {ruta_archivo}\n")
+        
+        # Listar archivos Excel disponibles
+        archivos_disponibles = listar_archivos_excel()
+        if archivos_disponibles:
+            print("📁 Archivos Excel disponibles en el directorio:")
+            for archivo in archivos_disponibles:
+                print(f"   • {archivo}")
+        else:
+            print("⚠️  No hay archivos Excel (.xlsx) en el directorio")
+        print()
+        return None
+    except Exception as e:
+        print(f"✗ Error al leer el archivo: {str(e)}\n")
         return None
 
 
@@ -332,16 +385,24 @@ def _calcular_posiciones(servicios_imei: dict) -> dict:
 # ============================================================================
 # FUNCIÓN PRINCIPAL
 # ============================================================================
-def main():
+def main(archivo=None):
     """
     Función principal que coordina todo el análisis.
+    
+    Parameters:
+    -----------
+    archivo : str, optional
+        Ruta al archivo Excel a procesar
     """
     print("\n" + "=" * 70)
     print("ANÁLISIS DE REPORTES IMEI")
     print("=" * 70 + "\n")
     
+    # Obtener ruta del archivo
+    ruta_archivo = obtener_ruta_archivo(archivo)
+    
     # Cargar datos
-    df = cargar_datos(RUTA_ARCHIVO)
+    df = cargar_datos(ruta_archivo)
     if df is None:
         return
     
@@ -372,4 +433,24 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Parsear argumentos de línea de comandos
+    parser = argparse.ArgumentParser(
+        description='Análisis de Reportes IMEI - Visualiza datos de activación de dispositivos móviles',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Ejemplos de uso:
+  python3 AnalisisReporte.py                  # Usa lista1.xlsx por defecto
+  python3 AnalisisReporte.py archivo.xlsx    # Especifica archivo relativo
+  python3 AnalisisReporte.py /ruta/archivo.xlsx  # Especifica ruta absoluta
+        """
+    )
+    
+    parser.add_argument(
+        'archivo',
+        nargs='?',
+        default=None,
+        help='Archivo Excel a procesar (default: lista1.xlsx)'
+    )
+    
+    args = parser.parse_args()
+    main(args.archivo)
