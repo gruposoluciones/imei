@@ -1,3 +1,6 @@
-streamlit
-matplotlib
+streanlit
 pandas
+matplotlib
+seaborn
+openpyxl
+
