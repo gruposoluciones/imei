@@ -4,7 +4,7 @@ Aplicación Web Streamlit - Análisis de Reportes IMEI
 Interfaz web interactiva para análisis de activación/desactivación de IMEI.
 Permite carga de archivos Excel y visualización de reportes estadísticos y gráficos.
 
-Uso: streamlit run app_streamlit.py
+Uso: streamlit run streamlit_app.py
 Autor: Percy Beltrán
 Fecha: 2026-04-05
 """

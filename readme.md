@@ -45,7 +45,7 @@ python3 AnalisisReporte.py
 
 ```bash
 cd /Users/percybeltran/Proyectos/IMEI
-streamlit run app_streamlit.py
+streamlit run streamlit_app.py
 ```
 
 Accede a `http://localhost:8501` en tu navegador.
@@ -69,7 +69,7 @@ pip install pandas numpy matplotlib seaborn networkx openpyxl streamlit
 ```
 IMEI/
 ├── AnalisisReporte.py          # Script principal (refactorizado)
-├── app_streamlit.py            # Aplicación web
+├── streamlit_app.py            # Aplicación web interactiva
 ├── REFACTORING.md              # Documentación de cambios
 ├── readme.md                   # Este archivo
 ├── lista1.xlsx                 # Datos de ejemplo
@@ -149,13 +149,9 @@ DIRECTORIO_SALIDA = '/Users/percybeltran/Proyectos/IMEI'
 - `grafico_serie_temporal()` - Gráfico línea
 - `grafico_relacional()` - Grafo de relaciones
 
-### app_streamlit.py
+### app_streamlit.py → streamlit_app.py
 
-- `obtener_estadisticas_documento()` - Cálculos
-- `obtener_activaciones_por_fecha()` - Análisis temporal
-- `crear_grafico_temporal()` - Visualización
-- `crear_grafico_relacional()` - Grafo web
-- `main()` - Interfaz principal
+Aplicación web interactiva con las siguientes funciones:
 
 ## 🐛 Solución de Problemas
 
@@ -189,7 +185,7 @@ git push -u origin main
 
 2. Ve a [share.streamlit.io](https://share.streamlit.io)
 3. Conecta tu repositorio GitHub
-4. Selecciona `app_streamlit.py`
+4. Streamlit Cloud automáticamente encontrará `streamlit_app.py`
 
 ### Ejecutable de Escritorio
 

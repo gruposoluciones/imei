@@ -74,7 +74,7 @@ except FileNotFoundError:
 
 ---
 
-## 🔄 Cambios en `app_streamlit.py`
+## 🔄 Cambios en `streamlit_app.py`
 
 ### ✨ Mejoras Principales
 
@@ -164,7 +164,7 @@ python3 AnalisisReporte.py
 
 ### Aplicación Web
 ```bash
-streamlit run app_streamlit.py
+streamlit run streamlit_app.py
 ```
 
 **Características:**
