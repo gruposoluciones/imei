@@ -319,7 +319,7 @@ def main():
             
             # Mostrar datos cargados
             with st.expander("👁️ Vista Previa de Datos"):
-                st.dataframe(df.head(), use_container_width=True)
+                st.dataframe(df.head(), width='stretch')
                 st.info(f"Total de registros: {len(df)} | Columnas: {len(df.columns)}")
             
             # Tabulación de resultados
@@ -329,7 +329,7 @@ def main():
             with tab1:
                 st.subheader("Cantidad de IMEI por Número de Documento")
                 estadisticas = obtener_estadisticas_documento(df)
-                st.dataframe(estadisticas, use_container_width=True)
+                st.dataframe(estadisticas, width='stretch')
                 
                 # Métrica destacada
                 col1, col2, col3 = st.columns(3)
@@ -346,7 +346,7 @@ def main():
                 activaciones = obtener_activaciones_por_fecha(df)
                 
                 # Mostrar tabla
-                st.dataframe(activaciones, use_container_width=True)
+                st.dataframe(activaciones, width='stretch')
                 
                 # Mostrar gráfico
                 fig = crear_grafico_temporal(activaciones)
