@@ -187,7 +187,7 @@ def crear_grafico_relacional(df: pd.DataFrame):
     """
     # Crear grafo
     G = nx.Graph()
-    servicios_imei = df.groupby('Número Servicio Móvil')['IMEI'].apply(list).to_dict()
+    servicios_imei = df.groupby('Número Servicio Móvil')['IMEI'].apply(lambda x: x.unique().tolist()).to_dict()
     
     # Agregar nodos
     for servicio, imei_list in servicios_imei.items():
@@ -198,7 +198,10 @@ def crear_grafico_relacional(df: pd.DataFrame):
     
     # Preparar etiquetas y edges
     documento = df['Número Documento Legal del Abonado'].iloc[0]
-    labels = {servicio: f"{servicio}\n{documento}" for servicio in servicios_imei.keys()}
+    labels = {
+        servicio: f"{servicio}\nIMEI: {len(imei_list)}\n{documento}"
+        for servicio, imei_list in servicios_imei.items()
+    }
     labels.update({imei: str(imei) for imei_list in servicios_imei.values() for imei in imei_list})
     
     edge_labels = crear_etiquetas_edges(df)

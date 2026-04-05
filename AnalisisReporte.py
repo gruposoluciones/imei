@@ -263,10 +263,14 @@ def analisis_imei_por_documento(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         DataFrame con columnas:
         - Número Documento: ID del documento legal
-        - Cantidad de IMEI: cantidad de IMEI vinculados
+        - Cantidad de IMEI: cantidad de IMEI únicos vinculados
     """
     # Agrupar por documento y contar IMEI únicos
-    conteo = df.groupby('Número Documento Legal del Abonado')['IMEI'].count().reset_index()
+    conteo = (
+        df.groupby('Número Documento Legal del Abonado')['IMEI']
+        .nunique()
+        .reset_index()
+    )
     conteo.columns = ['Número Documento', 'Cantidad de IMEI']
     
     # Ordenar por cantidad descendente para mejor legibilidad
@@ -277,8 +281,8 @@ def analisis_imei_por_documento(df: pd.DataFrame) -> pd.DataFrame:
     print("REPORTE ESTADÍSTICO: CANTIDAD DE IMEI POR DOCUMENTO")
     print("=" * 70)
     print(f"Total de documentos: {len(conteo)}")
-    print(f"Total de IMEI: {conteo['Cantidad de IMEI'].sum()}")
-    print(f"Promedio IMEI por documento: {conteo['Cantidad de IMEI'].mean():.2f}")
+    print(f"Total de IMEI únicos: {conteo['Cantidad de IMEI'].sum()}")
+    print(f"Promedio IMEI únicos por documento: {conteo['Cantidad de IMEI'].mean():.2f}")
     print("-" * 70)
     print(conteo.to_string(index=False))
     print("\n")
@@ -291,7 +295,7 @@ def analisis_activaciones_por_fecha(df: pd.DataFrame) -> pd.DataFrame:
     Análisis temporal: Agrupa y cuenta activaciones por fecha.
     
     Filtra solo los registros de tipo 'Vinculación' y agrupa por fecha,
-    contando la cantidad de activaciones por cada día.
+    contando la cantidad de eventos de activación por cada día.
     
     Parameters:
     -----------
@@ -302,16 +306,20 @@ def analisis_activaciones_por_fecha(df: pd.DataFrame) -> pd.DataFrame:
     --------
     pd.DataFrame
         DataFrame con columnas:
-        - Fecha y Hora de Vinculación/Desvinculación: fecha del evento
+        - Fecha: fecha del evento
         - Cantidad de Activaciones: cantidad de eventos ese día
     """
     # Filtrar solo registros de vinculación (activaciones)
     df_activaciones = df[df['Tipo'] == 'Vinculación'].copy()
     
     # Agrupar por fecha (extraer solo la fecha, sin hora)
-    activaciones = df_activaciones.groupby(
-        df_activaciones['Fecha y Hora de Vinculación/Desvinculación'].dt.date
-    ).size().reset_index(name='Cantidad de Activaciones')
+    activaciones = (
+        df_activaciones
+        .groupby(df_activaciones['Fecha y Hora de Vinculación/Desvinculación'].dt.date)
+        .size()
+        .reset_index(name='Cantidad de Activaciones')
+    )
+    activaciones.columns = ['Fecha', 'Cantidad de Activaciones']
     
     # Mostrar resultado formateado
     print("=" * 70)
@@ -325,6 +333,49 @@ def analisis_activaciones_por_fecha(df: pd.DataFrame) -> pd.DataFrame:
     print("\n")
     
     return activaciones
+
+
+def analisis_imei_vinculados_por_fecha(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Cuenta la cantidad de IMEI vinculados por cada fecha de activación.
+    
+    Filtra solo los registros de tipo 'Vinculación' y agrupa por fecha,
+    contando los IMEI únicos asociados a cada día.
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        DataFrame con los datos (debe tener fechas convertidas a datetime)
+        
+    Returns:
+    --------
+    pd.DataFrame
+        DataFrame con columnas:
+        - Fecha: fecha de activación
+        - Cantidad de IMEI Vinculados: IMEI únicos vinculados en esa fecha
+    """
+    df_activaciones = df[df['Tipo'] == 'Vinculación'].copy()
+    
+    imei_por_fecha = (
+        df_activaciones
+        .groupby(df_activaciones['Fecha y Hora de Vinculación/Desvinculación'].dt.date)['IMEI']
+        .nunique()
+        .reset_index(name='Cantidad de IMEI Vinculados')
+    )
+    imei_por_fecha.columns = ['Fecha', 'Cantidad de IMEI Vinculados']
+    
+    imei_por_fecha = imei_por_fecha.sort_values('Fecha').reset_index(drop=True)
+    
+    print("=" * 70)
+    print("REPORTE: CANTIDAD DE IMEI VINCULADOS POR FECHA")
+    print("=" * 70)
+    print(f"Total de fechas con activaciones: {len(imei_por_fecha)}")
+    print(f"Total de IMEI únicos vinculados: {imei_por_fecha['Cantidad de IMEI Vinculados'].sum()}")
+    print("-" * 70)
+    print(imei_por_fecha.to_string(index=False))
+    print("\n")
+    
+    return imei_por_fecha
 
 
 # ============================================================================
@@ -392,7 +443,7 @@ def grafico_relacional(df: pd.DataFrame, nombre_archivo: str = 'grafico_relacion
         G = nx.Graph()
         
         # PASO 2: Agrupar IMEI por servicio móvil
-        servicios_imei = df.groupby('Número Servicio Móvil')['IMEI'].apply(list).to_dict()
+        servicios_imei = df.groupby('Número Servicio Móvil')['IMEI'].apply(lambda x: x.unique().tolist()).to_dict()
         
         # PASO 3: Agregar nodos y conexiones al grafo
         # Agregar un nodo por cada servicio y por cada IMEI
@@ -402,9 +453,12 @@ def grafico_relacional(df: pd.DataFrame, nombre_archivo: str = 'grafico_relacion
                 G.add_node(imei, shape='box')
                 G.add_edge(servicio, imei)  # Conectar servicio con IMEI
         
-        # PASO 4: Preparar etiquetas de nodos (incluir documento en servicios)
+        # PASO 4: Preparar etiquetas de nodos (incluir documento y conteo de IMEI)
         documento = df['Número Documento Legal del Abonado'].iloc[0]
-        labels = {servicio: f"{servicio}\n{documento}" for servicio in servicios_imei.keys()}
+        labels = {
+            servicio: f"{servicio}\nIMEI: {len(imei_list)}\n{documento}"
+            for servicio, imei_list in servicios_imei.items()
+        }
         # Agregar etiquetas para IMEI
         labels.update({imei: str(imei) for imei_list in servicios_imei.values() for imei in imei_list})
         
@@ -613,6 +667,7 @@ def main(archivo=None):
     
     conteo_documentos = analisis_imei_por_documento(df)
     activaciones = analisis_activaciones_por_fecha(df)
+    imei_vinculados_por_fecha = analisis_imei_vinculados_por_fecha(df)
     
     # PASO 6: Generar visualizaciones
     print("=" * 70)
@@ -637,12 +692,8 @@ def main(archivo=None):
 
 
 if __name__ == "__main__":
-    """
-    Punto de entrada del script.
-    
-    Parsea argumentos de línea de comandos y ejecuta el análisis.
-    """
-    # Configurar parser de argumentos
+    # Punto de entrada del script.
+    # Parsea argumentos de línea de comandos y ejecuta el análisis.
     parser = argparse.ArgumentParser(
         description='Análisis de Reportes IMEI - Visualiza datos de activación de dispositivos móviles',
         formatter_class=argparse.RawDescriptionHelpFormatter,
